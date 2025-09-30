@@ -1,5 +1,5 @@
-Flask==2.3.2
-Flask-Cors==3.1.1
-youtube-transcript-api==0.6.0
-transformers==4.44.0
-torch==2.2.0
+Flask
+Flask-Cors
+youtube-transcript-api
+transformers
+torch
