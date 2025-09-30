@@ -1,15 +1,29 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from transformers import pipeline
+import os
 
 app = Flask(__name__)
+
+# Load model once
+summariser = pipeline('summarization')
 
 @app.get('/summary')
 def summary_api():
     url = request.args.get('url', '')
-    video_id = url.split('=')[1]
-    summary = get_summary(get_transcript(video_id))
-    return summary, 200
+    if not url:
+        return {"error": "URL parameter missing"}, 400
+    try:
+        video_id = url.split('=')[1]
+    except IndexError:
+        return {"error": "Invalid YouTube URL"}, 400
+
+    try:
+        transcript = get_transcript(video_id)
+        summary = get_summary(transcript)
+        return jsonify({"summary": summary}), 200
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 def get_transcript(video_id):
     transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
@@ -17,13 +31,14 @@ def get_transcript(video_id):
     return transcript
 
 def get_summary(transcript):
-    summariser = pipeline('summarization')
     summary = ''
-    for i in range(0, (len(transcript)//1000)+1):
-        summary_text = summariser(transcript[i*1000:(i+1)*1000])[0]['summary_text']
-        summary = summary + summary_text + ' '
-    return summary
-    
+    chunk_size = 1000
+    for i in range(0, (len(transcript)//chunk_size)+1):
+        chunk = transcript[i*chunk_size:(i+1)*chunk_size]
+        summary_text = summariser(chunk)[0]['summary_text']
+        summary += summary_text + ' '
+    return summary.strip()
 
 if __name__ == '__main__':
-    app.run()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
