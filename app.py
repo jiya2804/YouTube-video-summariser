@@ -1,18 +1,25 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from youtube_transcript_api import YouTubeTranscriptApi
 from transformers import pipeline
 import os
 
 app = Flask(__name__)
+CORS(app)
 
-# Load model once
-summariser = pipeline('summarization')
+# Load a smaller summarization model
+# This is lighter than the default distilbart-cnn-12-6
+summariser = pipeline(
+    "summarization",
+    model="facebook/bart-base"  # smaller model
+)
 
 @app.get('/summary')
 def summary_api():
     url = request.args.get('url', '')
     if not url:
         return {"error": "URL parameter missing"}, 400
+
     try:
         video_id = url.split('=')[1]
     except IndexError:
@@ -32,8 +39,8 @@ def get_transcript(video_id):
 
 def get_summary(transcript):
     summary = ''
-    chunk_size = 1000
-    for i in range(0, (len(transcript)//chunk_size)+1):
+    chunk_size = 500  # smaller chunks to save memory
+    for i in range(0, (len(transcript) // chunk_size) + 1):
         chunk = transcript[i*chunk_size:(i+1)*chunk_size]
         summary_text = summariser(chunk)[0]['summary_text']
         summary += summary_text + ' '
