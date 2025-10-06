@@ -1,5 +1,8 @@
-Flask
-Flask-Cors
-youtube-transcript-api
-transformers
-torch
+flask==3.0.0
+flask-cors==4.0.0
+youtube-transcript-api==0.6.1
+transformers==4.35.2
+torch==2.1.0
+sentencepiece==0.1.99
+protobuf==3.20.3
+gunicorn==21.2.0
